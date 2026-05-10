@@ -1632,42 +1632,36 @@
         }
         
         // ==================== SYNC ====================
-        async function exportToSheets() { 
-            try {
-                await fetch(GSURL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        type: 'exportAll', 
-                        data: { 
-                            expenses, 
-                            transfers, 
-                            totalBudget: getBudgetValue(), 
-                            exportDate: new Date().toISOString() 
-                        } 
-                    })
-                });
-                alert('✅ ส่งออกไป Google Sheets เรียบร้อย');
-                updateConn(true);
-            } catch(e) {
-                alert('❌ ไม่สามารถส่งออกได้\nกรุณาตรวจสอบการเชื่อมต่อ');
-                updateConn(false);
-            }
-        }
-        
-        async function sync(obj) {
-            if (GSURL === 'YOUR_GOOGLE_APPS_SCRIPT_URL') return;
-            try { 
-                await fetch(GSURL, { 
-                    method:'POST', 
-                    headers:{'Content-Type':'application/json'}, 
-                    body:JSON.stringify(obj) 
-                }); 
-                updateConn(true); 
-            } catch(e) { 
-                updateConn(false); 
-            }
-        }
+        async function exportToSheets() {
+
+    try {
+
+        const response = await fetch(GSURL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                type: 'exportAll'
+            })
+        });
+
+        const result = await response.json();
+
+        alert('✅ เชื่อมต่อ Google Sheets สำเร็จ');
+        updateConn(true);
+
+        console.log(result);
+
+    } catch(e) {
+
+        console.error(e);
+
+        alert('❌ ไม่สามารถส่งออกได้');
+        updateConn(false);
+
+    }
+}
         
         function updateConn(ok) {
             const d = document.getElementById('connDot');
