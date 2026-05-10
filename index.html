@@ -1633,33 +1633,22 @@
         
         // ==================== SYNC ====================
         async function exportToSheets() {
-
     try {
-
-        const response = await fetch(GSURL, {
+        await fetch(GSURL, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'text/plain;charset=utf-8'
-            },
+            mode: 'no-cors',
             body: JSON.stringify({
                 type: 'exportAll'
             })
         });
 
-        const result = await response.json();
-
-        alert('✅ เชื่อมต่อ Google Sheets สำเร็จ');
+        alert('✅ ส่งคำสั่งไป Google Sheets แล้ว กรุณาตรวจสอบในชีต');
         updateConn(true);
 
-        console.log(result);
-
     } catch(e) {
-
         console.error(e);
-
         alert('❌ ไม่สามารถส่งออกได้');
         updateConn(false);
-
     }
 }
         
