@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบบันทึกค่าใช้จ่ายค้างจ่าย - ค่าสาธารณูปโภค v2.0</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Chakra Petch', 'TH Sarabun New', 'THSarabun', sans-serif;
+            background: linear-gradient(135deg, #4a5935 0%, #5d6e46 100%);
+            min-height: 100vh;
+            padding: 24px;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .container {
+            max-width: 1500px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #3d4a2c 0%, #4a5935 100%);
+            color: #fff;
+            padding: 20px 28px;
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .header h1 { font-size: 32px; font-weight: 700; }
+        
+        .header-status {
+            font-size: 18px;
+            color: rgba(255,255,255,0.9);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .dot { width: 11px; height: 11px; border-radius: 50%; background: #e67e22; animation: pulse 2s infinite; }
+        .dot.off { background: #c9b196; animation: none; }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .header-dev {
+            margin-top: 10px;
+            font-size: 17px;
+            color: rgba(255,255,255,0.85);
+            border-top: 1px solid rgba(255,255,255,0.2);
+            padding-top: 10px;
+        }
+        
+        .main-content { padding: 24px 28px; }
+        
+        /* ===== สรุปงบประมาณ - 2 แถว x 3 คอลัมภ์ ===== */
+        .budget-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .stat-card {
+            background: #faf8f3;
+            padding: 20px 24px;
+            border-radius: 12px;
+            border: 1px solid #e8e3d8;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        
+        .stat-card.hl { 
+            background: linear-gradient(135deg, #4a5935 0%, #5d6e46 100%);
+            border: 1px solid #6d7f56;
+        }
+        .stat-card.hl label, .stat-card.hl .val { color: #fff; }
+        
+        .stat-card.wa { 
+            background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+            border: 1px solid #e67e22;
+        }
+        .stat-card.wa label, .stat-card.wa .val { color: #fff; }
+        
+        .stat-card.da { 
+            background: linear-gradient(135deg, #f4e5d3 0%, #e8d4ba 100%);
+            border: 1px solid #d9c3a8;
+        }
+        .stat-card.da label { color: #5d4e37; }
+        .stat-card.da .val { color: #3d2f1f; }
+        
+        .stat-card label { font-size: 17px; font-weight: 600; display: block; margin-bottom: 6px; color: #6d5d4e; }
+        
+        .stat-card .val {
+            font-size: 28px;
+            font-weight: 700;
+            margin-top: 4px;
+            line-height: 1.2;
+        }
+        
+        .stat-card .val.grn { color: #4a5935; }
+        .stat-card .val.rd { color: #c44025; }
+        
+        .stat-card input.val-edit {
+            width: 100%;
+            border: none;
+            font-size: 28px;
+            font-weight: 700;
+            background: transparent;
+            font-family: 'Chakra Petch', 'TH Sarabun New', sans-serif;
+            padding: 0;
+            margin-top: 4px;
+            color: #fff;
+        }
+        
+        .stat-card input.val-edit:focus { outline: none; }
+        
+        /* ===== Month Calendar ===== */
+        .month-picker-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+        }
+        
+        .month-picker-overlay.show {
+            display: block;
+        }
+        
+        .month-picker-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            z-index: 999;
+            max-width: 380px;
+            width: 90%;
+        }
+        
+        .month-picker-popup.show {
+            display: block;
+        }
+        
+        .month-calendar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            padding: 12px;
+        }
+        
+        .month-btn {
+            padding: 8px 6px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: 'Chakra Petch', 'TH Sarabun New', sans-serif;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            line-height: 1.3;
+        }
+        
+        .month-btn small {
+            font-size: 11px;
+            opacity: 0.6;
+            display: block;
+            margin-top: 2px;
+        }
+        
+        .month-btn:hover {
+            background: #f9fafb;
+            border-color: #4a5935;
+        }
+        
+        .month-btn.selected {
+            background: linear-gradient(135deg, #4a5935 0%, #5d6e46 100%);
+            color: #fff;
+            border-color: #4a5935;
+            font-weight: 700;
+        }
+        
+        .month-btn.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        
+        /* ===== กล่องสรุป 3 ประเภท - 3 คอลัมภ์ ===== */
+        .cat-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .cat-card {
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .cat-card:hover { 
+            transform: translateY(-3px);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+        }
+        
+        .cat-card .card-head {
+            padding: 14px 18px;
+            font-weight: 700;
+            font-size: 18px;
+            color: #fff;
+        }
+        
+        .cat-card:nth-child(1) .card-head { background: linear-gradient(135deg, #4a5935 0%, #5d6e46 100%); }
+        .cat-card:nth-child(2) .card-head { background: linear-gradient(135deg, #e67e22 0%, #d35400 100%); }
+        .cat-card:nth-child(3) .card-head { background: linear-gradient(135deg, #6d7f56 0%, #7f9266 100%); }
+        
+        .cat-card .card-body { padding: 14px 18px; }
+        
+        .card-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dashed #e5e7eb;
+            font-size: 17px;
+        }
+        
+        .card-row:last-child { border-bottom: none; }
+        .card-row .lbl { color: #6b7280; font-weight: 600; }
+        .card-row .amt { font-weight: 700; color: #1f2937; }
+        
+        /* ===== Filter Bar ===== */
+        .filter-bar {
+            background: linear-gradient(135deg, #faf8f3 0%, #f4ede3 100%);
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 18px;
+            border: 1px solid #e8ddc8;
+        }
+        
+        .filter-bar h3 { 
+            font-size: 19px; 
+            color: #4a5935; 
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+        }
+        
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: flex-end;
+        }
+        
+        .filter-group { flex: 1; min-width: 140px; }
+        
+        .filter-group label {
+            display: block;
+            font-size: 16px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 4px;
+        }
+        
+        .filter-group select {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 17px;
+            font-weight: 600;
+            font-family: 'Chakra Petch', 'TH Sarabun New', sans-serif;
+            background: #fff;
+            color: #1f2937;
+        }
+        
+        /* ===== Tabs ===== */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 16px;
+            border-bottom: 2px solid #d9c3a8;
+        }
+        
+        .tab {
+            padding: 12px 20px;
+            border: none;
+            background: none;
+            font-size: 19px;
+            font-family: 'Chakra Petch', 'TH Sarabun New', sans-serif;
+            color: #8b7d6b;
+            cursor: pointer;
+            border-radius: 10px 10px 0 0;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active { 
+            color: #4a5935; 
+            background: linear-gradient(135deg, #faf8f3 0%, #f4ede3 100%); 
+            font-weight: 700; 
+        }
+        .tab:hover { background: #fefdfb; }
+        
+        /* ===== ฟอร์ม ===== */
+        .form-box {
+            background: #fff;
+            padding: 18px 22px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 18px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+        
+        .form-box h2 { 
+            font-size: 22px; 
+            background: linear-gradient(135deg, #4a5935 0%, #5d6e46 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 14px; 
+            font-weight: 700;
+        }
+        
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            align-items: flex-end;
+        }
+        
+        .form-group { flex: 1; min-width: 160px; }
+        
+        .form-group label {
+            display: block;
+            font-size: 17px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 5px;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            font-family: 'Chakra Petch', 'TH Sarabun New', sans-serif;
+            background: #fff;
+            color: #1f2937;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #4a5935;
+            box-shadow: 0 0 0 4px rgba(74,89,53,0.1);
+        }
+        
+        /* ===== ปุ่ม ===== */
+        .btn {
+            padding: 11px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-family: 'Chakra Petch', 'TH Sarabun New', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.18); }
+        
+        .btn-primary { background: linear-gradient(135deg, #4a5935 0%, #5d6e46 100%); color: #fff; }
+        .btn-success { background: linear-gradient(135deg, #6d7f56 0%, #7f9266 100%); color: #fff; }
+        .btn-warning { background: linear-gradient(135deg, #e67e22 0%, #d35400 100%); color: #fff; }
+        .btn-danger { background: linear-gradient(135deg, #c44025 0%, #a63820 100%); color: #fff; }
+        .btn-info { background: linear-gradient(135deg, #3d4a2c 0%, #4a5935 100%); color: #fff; }
+        .btn-edit { background: linear-gradient(135deg, #f4e5d3 0%, #e8d4ba 100%); color: #3d2f1f; }
+        .btn-undo { background: linear-gradient(135deg, #d9c3a8 0%, #c9b196 100%); color: #3d2f1f; }
+        .btn-sm { padding: 7px 14px; font-size: 16px; }
+        
+        /* ===== ตาราง ===== */
+        .tbl-wrap {
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+            margin-bottom: 18px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+        
+        .tbl-wrap .tbl-head {
+            padding: 14px 20px;
+            font-weight: 700;
+            font-size: 19px;
+            color: #fff;
+            background: linear-gradient(135deg, #4a5935 0%, #5d6e46 100%);
+        }
+        
+        .tbl-scroll { overflow-x: auto; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        
+        th {
+            background: #f9fafb;
+            color: #374151;
+            font-weight: 700;
+            font-size: 17px;
+            padding: 10px 14px;
+            text-align: left;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        td {
+            padding: 10px 14px;
+            font-size: 18px;
+            font-weight: 600;
+            border-bottom: 1px solid #f3f4f6;
+            color: #1f2937;
+        }
+        
+        tr:hover td { background: #f9fafb; }
+        
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 18px;
+            font-size: 15px;
+            font-weight: 700;
+        }
+        
+        .badge-pending { background: #fef5e7; color: #a66321; border: 1px solid #f39c12; }
+        .badge-paid { background: #d5e8d4; color: #2d5016; border: 1px solid #6d7f56; }
+        
+        .alert {
+            background: linear-gradient(135deg, #fef5e7 0%, #fdebd0 100%);
+            border-left: 4px solid #e67e22;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 14px;
+            font-size: 18px;
+            color: #5d4e37;
+            font-weight: 600;
+        }
+        
+        /* ===== Modal ===== */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 999;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.show { display: flex; }
+        
+        .modal-box {
+            background: #fff;
+            padding: 24px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        
+        .modal-box h2 { 
+            background: linear-gradient(135deg, #4a5935 0%, #5d6e46 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px; 
+            font-size: 22px;
+            font-weight: 700;
+        }
+        
+        .modal-close { 
+            float: right; 
+            font-size: 30px; 
+            cursor: pointer; 
+            color: #6b7280;
+            transition: color 0.3s ease;
+        }
+        .modal-close:hover { color: #ef4444; }
+        
+        .detail-box {
+            background: #f9fafb;
+            padding: 14px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 18px;
+            font-weight: 600;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .detail-box p { margin: 5px 0; }
+        
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        
+        /* ===== Stats Summary ===== */
+        .stats-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+            padding: 16px;
+            background: linear-gradient(135deg, #faf8f3 0%, #f4ede3 100%);
+            border-radius: 12px;
+            border: 1px solid #e8ddc8;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 12px;
+        }
+        
+        .stat-item .label {
+            font-size: 15px;
+            font-weight: 600;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+        
+        .stat-item .value {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 16px; font-size: 18px; }
+            .main-content { padding: 18px; }
+            .header { padding: 16px; }
+            .header h1 { font-size: 26px; }
+            .stat-card .val { font-size: 24px; }
+            td { font-size: 17px; }
+            .cat-cards { grid-template-columns: 1fr; }
+            .budget-row { grid-template-columns: 1fr; }
+            .month-calendar { grid-template-columns: repeat(3, 1fr); }
+            .month-picker-popup { width: 95%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-top">
+                <h1>📊 ระบบบันทึกค่าใช้จ่ายค้างจ่าย v2.0</h1>
+                <div class="header-status">
+                    <span class="dot" id="connDot"></span>
+                    <span id="connText">พร้อมทำงาน</span>
+                </div>
+            </div>
+            <div class="header-dev">
+                👩‍💼 ผู้พัฒนา: นางปาริชาติ ลีอริยะ หัวหน้ากลุ่มภารกิจงานบริหารทั่วไปและซ่อมบำรุง
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <!-- ===== สรุปงบประมาณรวม ===== -->
+            <div class="budget-row">
+                <div class="stat-card hl">
+                    <label>💰 งบประมาณรวม</label>
+                    <input type="text" class="val-edit" id="totalBudget" value="23,000,000.00" onchange="updateAll()" style="font-size:32px;">
+                </div>
+                <div class="stat-card wa">
+                    <label>📤 โอนออก</label>
+                    <div class="val" id="totalOut">0.00 บาท</div>
+                </div>
+                <div class="stat-card">
+                    <label>📥 รับโอน</label>
+                    <div class="val grn" id="totalIn">0.00 บาท</div>
+                </div>
+                <div class="stat-card">
+                    <label>💵 งบสุทธิ</label>
+                    <div class="val" id="netBudget">23,000,000.00 บาท</div>
+                </div>
+                <div class="stat-card">
+                    <label>✅ จ่ายจริงทั้งหมด</label>
+                    <div class="val" id="totalPaidAll">0.00 บาท</div>
+                </div>
+                <div class="stat-card da">
+                    <label>📊 คงเหลือใช้</label>
+                    <div class="val" id="remainBudget">23,000,000.00 บาท</div>
+                </div>
+            </div>
+            
+            <!-- ===== กล่องสรุป 3 ประเภท - 3 คอลัมภ์ ===== -->
+            <div class="cat-cards">
+                <div class="cat-card">
+                    <div class="card-head">⚡ 1. ค่าไฟฟ้า อาคารศสท.</div>
+                    <div class="card-body">
+                        <div class="card-row"><span class="lbl">ค้างจ่าย</span><span class="amt" id="c1acc">0.00 บาท</span></div>
+                        <div class="card-row"><span class="lbl">จ่ายจริง</span><span class="amt" id="c1paid">0.00 บาท</span></div>
+                    </div>
+                </div>
+                <div class="cat-card">
+                    <div class="card-head">⚡ 2. ค่าไฟฟ้า อาคารสัตววิทยจักษ์</div>
+                    <div class="card-body">
+                        <div class="card-row"><span class="lbl">ค้างจ่าย</span><span class="amt" id="c2acc">0.00 บาท</span></div>
+                        <div class="card-row"><span class="lbl">จ่ายจริง</span><span class="amt" id="c2paid">0.00 บาท</span></div>
+                    </div>
+                </div>
+                <div class="cat-card">
+                    <div class="card-head">💧 3. ค่าน้ำประปา อาคารศสท.</div>
+                    <div class="card-body">
+                        <div class="card-row"><span class="lbl">ค้างจ่าย</span><span class="amt" id="c3acc">0.00 บาท</span></div>
+                        <div class="card-row"><span class="lbl">จ่ายจริง</span><span class="amt" id="c3paid">0.00 บาท</span></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ===== Tabs ===== -->
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('accrued')">📝 บันทึกค้างจ่าย</button>
+                <button class="tab" onclick="switchTab('transfer')">🔄 โอนงบประมาณ</button>
+                <button class="tab" onclick="switchTab('report')">📈 รายงาน</button>
+                <button class="tab" onclick="switchTab('backup')">💾 สำรอง/กู้คืน</button>
+            </div>
+            
+            <!-- ===== บันทึกค้างจ่าย ===== -->
+            <div id="secAccrued">
+                <div class="form-box">
+                    <h2 id="formTitle">➕ บันทึกรายการค้างจ่าย</h2>
+                    <div class="form-row">
+                        <input type="hidden" id="editId" value="">
+                        <div class="form-group">
+                            <label>ประเภทรายการ</label>
+                            <select id="expCat">
+                                <option value="1">1. ค่าไฟฟ้า อาคารศสท.</option>
+                                <option value="2">2. ค่าไฟฟ้า อาคารสัตววิทยจักษ์</option>
+                                <option value="3">3. ค่าน้ำประปา อาคารศสท.</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>เลขที่เอกสาร</label><input type="text" id="docNo" placeholder="เช่น ACC-2024-001"></div>
+                        <div class="form-group">
+                            <label>ปีงบประมาณ</label>
+                            <select id="fiscalYear" onchange="updateMonthButtons()">
+                                <option value="">เลือกปีงบฯ</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>เดือน</label>
+                            <input type="text" id="monthDisplay" readonly onclick="toggleMonthPicker()" placeholder="เลือกเดือน" style="cursor: pointer;">
+                            <input type="hidden" id="accMonth">
+                        </div>
+                        <div class="form-group"><label>ยอดค้างจ่าย</label><input type="number" id="accAmt" placeholder="0.00" step="0.01" value="0.00"></div>
+                        <div class="form-group"><label>วันที่</label><input type="date" id="accDate"></div>
+                        <div class="form-group"><label>หมายเหตุ</label><input type="text" id="accNote" placeholder="เพิ่มเติม"></div>
+                        <div class="form-group btn-group" style="display:flex;align-items:flex-end;gap:8px;">
+                            <button class="btn btn-primary" id="btnSave" onclick="saveExpense()">💾 บันทึก</button>
+                            <button class="btn btn-edit" id="btnCancel" onclick="cancelEdit()" style="display:none;">❌ ยกเลิก</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Month Picker Popup -->
+                    <div class="month-picker-overlay" id="monthPickerOverlay" onclick="closeMonthPicker()"></div>
+                    <div class="month-picker-popup" id="monthPickerPopup">
+                        <div style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 700; font-size: 15px; color: #4a5935;">เลือกเดือน</span>
+                            <button onclick="closeMonthPicker()" style="border: none; background: none; font-size: 22px; cursor: pointer; color: #6b7280; line-height: 1;">×</button>
+                        </div>
+                        <div class="month-calendar" id="monthCalendar"></div>
+                    </div>
+                </div>
+                
+                <!-- Filter Bar -->
+                <div class="filter-bar">
+                    <h3>🔍 ค้นหาและกรองข้อมูล</h3>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label>ประเภท</label>
+                            <select id="filterCat" onchange="applyFilters()">
+                                <option value="">ทั้งหมด</option>
+                                <option value="1">1. ค่าไฟฟ้า อาคารศสท.</option>
+                                <option value="2">2. ค่าไฟฟ้า อาคารสัตววิทยจักษ์</option>
+                                <option value="3">3. ค่าน้ำประปา อาคารศสท.</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>สถานะ</label>
+                            <select id="filterStatus" onchange="applyFilters()">
+                                <option value="">ทั้งหมด</option>
+                                <option value="pending">ค้างจ่าย</option>
+                                <option value="paid">จ่ายแล้ว</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>เดือนเริ่มต้น</label>
+                            <select id="filterStartMonth" onchange="applyFilters()">
+                                <option value="">-</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>เดือนสิ้นสุด</label>
+                            <select id="filterEndMonth" onchange="applyFilters()">
+                                <option value="">-</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <button class="btn btn-info" onclick="clearFilters()">🗑️ ล้างตัวกรอง</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Stats Summary -->
+                <div class="stats-summary" id="filterStats"></div>
+                
+                <div id="tablesHere"></div>
+            </div>
+            
+            <!-- ===== โอนงบประมาณ ===== -->
+            <div id="secTransfer" style="display:none;">
+                <div class="form-box">
+                    <h2>🔄 โอนงบประมาณ</h2>
+                    <div class="alert">⚠️ การโอนมีผลกับงบประมาณรวมเท่านั้น ไม่เกี่ยวกับรายการค้างจ่าย</div>
+                    <div class="form-row">
+                        <div class="form-group"><label>ประเภท</label><select id="trType"><option value="out">📤 โอนออก</option><option value="in">📥 รับโอน</option></select></div>
+                        <div class="form-group"><label>จำนวนเงิน</label><input type="number" id="trAmt" placeholder="0.00" step="0.01" value="0.00"></div>
+                        <div class="form-group"><label>วันที่</label><input type="date" id="trDate"></div>
+                        <div class="form-group"><label>หมายเหตุ</label><input type="text" id="trNote" placeholder="เช่น โอนไปหมวดอื่น"></div>
+                        <div class="form-group" style="display:flex;align-items:flex-end;"><button class="btn btn-warning" onclick="addTransfer()">🔄 บันทึก</button></div>
+                    </div>
+                </div>
+                <div class="tbl-wrap">
+                    <div class="tbl-head">📋 ประวัติการโอน</div>
+                    <div class="tbl-scroll"><table><thead><tr><th>#</th><th>วันที่</th><th>ประเภท</th><th>จำนวนเงิน</th><th>หมายเหตุ</th><th></th></tr></thead><tbody id="trHistory"></tbody></table></div>
+                </div>
+            </div>
+            
+            <!-- ===== รายงาน ===== -->
+            <div id="secReport" style="display:none;">
+                <div style="margin-bottom:18px;">
+                    <button class="btn btn-info" onclick="window.print()">🖨️ พิมพ์</button>
+                    <button class="btn btn-success" onclick="exportToSheets()">📤 ส่งออก Google Sheets</button>
+                </div>
+                <div class="tbl-wrap">
+                    <div class="tbl-head">📊 สรุปงบประมาณ</div>
+                    <div class="tbl-scroll"><table><tbody id="rptSummary"></tbody></table></div>
+                </div>
+                <div id="rptDetail" style="margin-top:18px;"></div>
+            </div>
+            
+            <!-- ===== สำรอง/กู้คืน ===== -->
+            <div id="secBackup" style="display:none;">
+                <div class="form-box">
+                    <h2>💾 สำรองข้อมูล (Backup)</h2>
+                    <p style="color:#6b7280;margin-bottom:14px;">ดาวน์โหลดข้อมูลทั้งหมดเป็นไฟล์ JSON เพื่อความปลอดภัย</p>
+                    <button class="btn btn-success" onclick="backupData()" style="width:100%;">📥 ดาวน์โหลดไฟล์สำรองข้อมูล</button>
+                </div>
+                
+                <div class="form-box">
+                    <h2>🔄 กู้คืนข้อมูล (Restore)</h2>
+                    <div class="alert" style="margin-bottom:14px;">⚠️ การกู้คืนจะแทนที่ข้อมูลปัจจุบันทั้งหมด กรุณาสำรองข้อมูลก่อนดำเนินการ</div>
+                    <input type="file" id="restoreFile" accept=".json" style="display:none;" onchange="restoreData(this.files[0])">
+                    <button class="btn btn-warning" onclick="document.getElementById('restoreFile').click()" style="width:100%;">📤 เลือกไฟล์เพื่อกู้คืน</button>
+                </div>
+                
+                <div class="form-box">
+                    <h2>🗑️ ล้างข้อมูลทั้งหมด</h2>
+                    <div class="alert" style="margin-bottom:14px;">⚠️ การดำเนินการนี้จะลบข้อมูลทั้งหมดและไม่สามารถกู้คืนได้</div>
+                    <button class="btn btn-danger" onclick="clearAllData()" style="width:100%;">🗑️ ล้างข้อมูลทั้งหมด</button>
+                </div>
+                
+                <div class="tbl-wrap">
+                    <div class="tbl-head">📊 สถิติข้อมูล</div>
+                    <div class="tbl-scroll">
+                        <table>
+                            <tbody id="dataStats">
+                                <tr><td><strong>รายการค้างจ่ายทั้งหมด</strong></td><td id="statExpenses">0 รายการ</td></tr>
+                                <tr><td><strong>รายการโอนงบประมาณ</strong></td><td id="statTransfers">0 รายการ</td></tr>
+                                <tr><td><strong>ขนาดข้อมูล (localStorage)</strong></td><td id="statSize">0 KB</td></tr>
+                                <tr><td><strong>สำรองครั้งล่าสุด</strong></td><td id="statLastBackup">ยังไม่เคยสำรอง</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal จ่ายจริง -->
+    <div class="modal" id="payModal">
+        <div class="modal-box">
+            <span class="modal-close" onclick="closePay()">&times;</span>
+            <h2>💰 บันทึกยอดจ่ายจริง</h2>
+            <div class="detail-box" id="payInfo"></div>
+            <div class="form-group" style="margin-bottom:14px;"><label>เลขที่เอกสารจ่าย</label><input type="text" id="payDoc" placeholder="เช่น PAY-2024-001"></div>
+            <div class="form-group" style="margin-bottom:14px;"><label>ยอดจ่ายจริง</label><input type="number" id="payAmt" placeholder="0.00" step="0.01" value="0.00"></div>
+            <div class="form-group" style="margin-bottom:18px;"><label>วันที่จ่าย</label><input type="date" id="payDate"></div>
+            <button class="btn btn-success" onclick="doPayment()" style="width:100%;">✅ บันทึกการจ่าย</button>
+        </div>
+    </div>
+
+    <script>
+        const GSURL = 'https://script.google.com/macros/s/AKfycbxly8OYehS9R_gAd0EL4Klnrk-T_H1zjzni4Ul_Tv1rSi_hY1chDsmpv26vJI0nZ3hZEQ/exec';
+        
+        // ==================== DATA ====================
+        let expenses = [];
+        let transfers = [];
+        let curId = null;
+        let currentFilters = {
+            category: '',
+            status: '',
+            startMonth: '',
+            endMonth: ''
+        };
+        
+        const catName = {
+            1: '1. ค่าไฟฟ้า อาคารศสท.',
+            2: '2. ค่าไฟฟ้า อาคารสัตววิทยจักษ์',
+            3: '3. ค่าน้ำประปา อาคารศสท.'
+        };
+        
+        const MONTHS = ['ต.ค.','พ.ย.','ธ.ค.','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.'];
+        
+        // ==================== SAFE LOCALSTORAGE ====================
+        function safeGet(key, defaultValue = null) {
+            try {
+                const item = localStorage.getItem(key);
+                return item ? JSON.parse(item) : defaultValue;
+            } catch(e) {
+                console.error('localStorage get error:', e);
+                return defaultValue;
+            }
+        }
+        
+        function safeSave(key, value) {
+            try {
+                localStorage.setItem(key, JSON.stringify(value));
+                return true;
+            } catch(e) {
+                if (e.name === 'QuotaExceededError') {
+                    alert('⚠️ พื้นที่เก็บข้อมูลเต็ม กรุณาสำรองและล้างข้อมูลเก่า');
+                }
+                console.error('localStorage save error:', e);
+                return false;
+            }
+        }
+        
+        // ==================== INIT ====================
+        function init() {
+            expenses = safeGet('allExpenses', []);
+            transfers = safeGet('budgetTransfers', []);
+            
+            const now = new Date();
+            document.getElementById('accDate').value = now.toISOString().split('T')[0];
+            document.getElementById('payDate').value = now.toISOString().split('T')[0];
+            document.getElementById('trDate').value = now.toISOString().split('T')[0];
+            
+            buildFiscalYearDropdown();
+            buildFilterMonthOptions();
+            resetFormToZero();
+            
+            const sb = localStorage.getItem('totalBudget');
+            if (sb) document.getElementById('totalBudget').value = sb;
+            
+            updateAll();
+            applyFilters();
+            renderTrHistory();
+            updateConn(GSURL !== 'YOUR_GOOGLE_APPS_SCRIPT_URL');
+            formatBudgetInput();
+            updateDataStats();
+        }
+        
+        // ==================== ปีงบประมาณ 10 ปี (2568-2577) ====================
+        function buildFiscalYearDropdown() {
+            const sel = document.getElementById('fiscalYear');
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth() + 1;
+            
+            // คำนวณปีงบฯ ปัจจุบัน
+            let currentFY;
+            if (currentMonth >= 10) {
+                currentFY = currentYear;
+            } else {
+                currentFY = currentYear - 1;
+            }
+            
+            sel.innerHTML = '<option value="">เลือกปีงบฯ</option>';
+            
+            // สร้าง dropdown ปีงบฯ 2568-2577
+            for (let fy = 2568; fy <= 2577; fy++) {
+                sel.innerHTML += `<option value="${fy}">${fy}</option>`;
+            }
+            
+            // ตั้งค่าเริ่มต้นเป็นปีงบฯ ปัจจุบัน
+            if (sel.querySelector(`option[value="${currentFY}"]`)) {
+                sel.value = currentFY;
+                updateMonthButtons();
+            }
+        }
+        
+        function updateMonthButtons() {
+            const fy = document.getElementById('fiscalYear').value;
+            const calendar = document.getElementById('monthCalendar');
+            
+            if (!fy) {
+                calendar.innerHTML = '<p style="text-align:center;color:#6b7280;grid-column:1/-1;padding:20px;">กรุณาเลือกปีงบประมาณก่อน</p>';
+                return;
+            }
+            
+            calendar.innerHTML = '';
+            
+            // สร้างปุ่ม 12 เดือน (ต.ค. - ก.ย.) - 4 คอลัมภ์ x 3 แถว
+            for (let i = 0; i < 12; i++) {
+                let actualYear, actualMonth;
+                
+                if (i <= 2) {
+                    // ต.ค., พ.ย., ธ.ค. → ปีงบฯ - 1
+                    actualYear = parseInt(fy) - 1;
+                    actualMonth = 10 + i;
+                } else {
+                    // ม.ค. - ก.ย. → ปีงบฯ
+                    actualYear = parseInt(fy);
+                    actualMonth = i - 2;
+                }
+                
+                const value = `${actualYear}-${String(actualMonth).padStart(2,'0')}`;
+                const shortYear = actualYear.toString().slice(-2); // 68, 69, 70
+                const label = `${MONTHS[i]}<br><small style="font-size:12px;opacity:0.7;">${shortYear}</small>`;
+                
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'month-btn';
+                btn.innerHTML = label;
+                btn.setAttribute('data-value', value);
+                btn.onclick = function() {
+                    selectMonth(value);
+                };
+                
+                calendar.appendChild(btn);
+            }
+        }
+        
+        function toggleMonthPicker() {
+            const fy = document.getElementById('fiscalYear').value;
+            if (!fy) {
+                alert('⚠️ กรุณาเลือกปีงบประมาณก่อน');
+                return;
+            }
+            
+            const overlay = document.getElementById('monthPickerOverlay');
+            const popup = document.getElementById('monthPickerPopup');
+            
+            overlay.classList.add('show');
+            popup.classList.add('show');
+        }
+        
+        function closeMonthPicker() {
+            const overlay = document.getElementById('monthPickerOverlay');
+            const popup = document.getElementById('monthPickerPopup');
+            
+            overlay.classList.remove('show');
+            popup.classList.remove('show');
+        }
+        
+        function selectMonth(value) {
+            // เก็บค่า
+            document.getElementById('accMonth').value = value;
+            
+            // แสดงในช่อง input
+            const monthName = fmtMonth(value);
+            document.getElementById('monthDisplay').value = monthName;
+            
+            // อัปเดต UI ปุ่ม
+            const allBtns = document.querySelectorAll('.month-btn');
+            allBtns.forEach(btn => btn.classList.remove('selected'));
+            
+            const selectedBtn = document.querySelector(`[data-value="${value}"]`);
+            if (selectedBtn) {
+                selectedBtn.classList.add('selected');
+            }
+            
+            // ปิด popup
+            closeMonthPicker();
+        }
+        
+        function buildFilterMonthOptions() {
+            const months = [];
+            
+            // สร้างปีงบประมาณ 2568 - 2577
+            for (let fy = 2568; fy <= 2577; fy++) {
+                for (let i = 0; i < 12; i++) {
+                    let actualYear, actualMonth;
+                    if (i <= 2) {
+                        actualYear = fy;
+                        actualMonth = 10 + i;
+                    } else {
+                        actualYear = fy + 1;
+                        actualMonth = i - 2;
+                    }
+                    const value = `${actualYear}-${String(actualMonth).padStart(2,'0')}`;
+                    const label = `${MONTHS[i]} ${fy}`;
+                    months.push({ value, label });
+                }
+            }
+            
+            const startSel = document.getElementById('filterStartMonth');
+            const endSel = document.getElementById('filterEndMonth');
+            
+            startSel.innerHTML = '<option value="">-</option>';
+            endSel.innerHTML = '<option value="">-</option>';
+            
+            months.forEach(m => {
+                startSel.innerHTML += `<option value="${m.value}">${m.label}</option>`;
+                endSel.innerHTML += `<option value="${m.value}">${m.label}</option>`;
+            });
+        }
+        
+        // ==================== VALIDATION ====================
+        function validateDocNumber(docNo, editId = null) {
+            const exists = expenses.some(e => 
+                e.docNumber.toUpperCase() === docNo.toUpperCase() && e.id != editId
+            );
+            if (exists) {
+                alert('⚠️ เลขที่เอกสารนี้มีอยู่แล้วในระบบ\nกรุณาใช้เลขที่เอกสารอื่น');
+                return false;
+            }
+            return true;
+        }
+        
+        function validateBudget(amt) {
+            const net = getBudgetValue() 
+                - transfers.filter(t=>t.type==='out').reduce((s,t)=>s+t.amount,0)
+                + transfers.filter(t=>t.type==='in').reduce((s,t)=>s+t.amount,0);
+            const paid = expenses.filter(e=>e.status==='paid')
+                .reduce((s,e)=>s+(e.actualAmount||0),0);
+            
+            if (paid + amt > net) {
+                return confirm(
+                    `⚠️ คำเตือน: การจ่ายนี้จะทำให้เกินงบประมาณ\n\n` +
+                    `งบประมาณคงเหลือ: ${fmt(net-paid)}\n` +
+                    `จำนวนที่จะจ่าย: ${fmt(amt)}\n` +
+                    `เกินงบ: ${fmt((paid + amt) - net)}\n\n` +
+                    `ต้องการดำเนินการต่อหรือไม่?`
+                );
+            }
+            return true;
+        }
+        
+        // ==================== SORT ====================
+        function sortExpenses(arr) {
+            return arr.sort((a, b) => {
+                if (a.category !== b.category) return a.category - b.category;
+                return (a.accruedMonth || '').localeCompare(b.accruedMonth || '');
+            });
+        }
+        
+        // ==================== FORMAT ====================
+        function formatBudgetInput() {
+            const inp = document.getElementById('totalBudget');
+            const raw = inp.value.replace(/[^\d.]/g, '');
+            const num = parseFloat(raw);
+            if (!isNaN(num)) inp.value = num.toLocaleString('th-TH', {minimumFractionDigits:2, maximumFractionDigits:2});
+        }
+        
+        function getBudgetValue() {
+            return parseFloat(document.getElementById('totalBudget').value.replace(/[^\d.]/g, '')) || 0;
+        }
+        
+        function fmt(n) {
+            return n.toLocaleString('th-TH', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' บาท';
+        }
+        
+        function fmtDate(d) {
+            if(!d) return '-';
+            return new Date(d).toLocaleDateString('th-TH', {year:'numeric', month:'long', day:'numeric'});
+        }
+        
+        function fmtMonth(m) {
+            if(!m) return '-';
+            const [y, mo] = m.split('-');
+            let fy, idx;
+            
+            // หาปีงบประมาณและ index ใน MONTHS
+            if (parseInt(mo) >= 10) {
+                // ต.ค., พ.ย., ธ.ค. → ปีงบ = ปีปัจจุบัน
+                fy = parseInt(y);
+                idx = parseInt(mo) - 10; // 10→0, 11→1, 12→2
+            } else {
+                // ม.ค. - ก.ย. → ปีงบ = ปีก่อนหน้า
+                fy = parseInt(y) - 1;
+                idx = parseInt(mo) + 2; // 1→3, 2→4, ..., 9→11
+            }
+            
+            return `${MONTHS[idx]} ${fy}`;
+        }
+        
+        // ==================== RESET FORM ====================
+        function resetFormToZero() {
+            document.getElementById('accAmt').value = '0.00';
+            document.getElementById('docNo').value = '';
+            document.getElementById('accNote').value = '';
+            document.getElementById('editId').value = '';
+            document.getElementById('formTitle').textContent = '➕ บันทึกรายการค้างจ่าย';
+            document.getElementById('btnSave').textContent = '💾 บันทึก';
+            document.getElementById('btnCancel').style.display = 'none';
+        }
+        
+        // ==================== UPDATE ====================
+        function updateAll() {
+            formatBudgetInput();
+            const tb = getBudgetValue();
+            localStorage.setItem('totalBudget', tb.toFixed(2));
+            
+            const out = transfers.filter(t=>t.type==='out').reduce((s,t)=>s+t.amount,0);
+            const inc = transfers.filter(t=>t.type==='in').reduce((s,t)=>s+t.amount,0);
+            const net = tb - out + inc;
+            const paid = expenses.filter(e=>e.status==='paid').reduce((s,e)=>s+(e.actualAmount||0),0);
+            const rem = net - paid;
+            
+            document.getElementById('totalOut').textContent = fmt(out);
+            document.getElementById('totalIn').textContent = fmt(inc);
+            document.getElementById('netBudget').textContent = fmt(net);
+            document.getElementById('totalPaidAll').textContent = fmt(paid);
+            
+            const rel = document.getElementById('remainBudget');
+            rel.textContent = fmt(rem);
+            rel.className = 'val';
+            if (rem < 0) rel.style.color = '#c44025';
+            else if (rem > 0) rel.style.color = '#4a5935';
+            
+            for (let c=1; c<=3; c++) {
+                const ex = expenses.filter(e=>e.category===c);
+                document.getElementById(`c${c}acc`).textContent = fmt(ex.reduce((s,e)=>s+e.accruedAmount,0));
+                document.getElementById(`c${c}paid`).textContent = fmt(ex.filter(e=>e.status==='paid').reduce((s,e)=>s+(e.actualAmount||0),0));
+            }
+        }
+        
+        // ==================== SAVE EXPENSE (ADD/UPDATE) ====================
+        function saveExpense() {
+            const cat = parseInt(document.getElementById('expCat').value);
+            const doc = document.getElementById('docNo').value.trim();
+            const month = document.getElementById('accMonth').value;
+            const amt = parseFloat(document.getElementById('accAmt').value);
+            const date = document.getElementById('accDate').value;
+            const note = document.getElementById('accNote').value.trim();
+            const editId = document.getElementById('editId').value;
+            
+            if (!doc || !month || isNaN(amt) || !date) {
+                alert('⚠️ กรุณากรอกข้อมูลให้ครบถ้วน\n\n- เลขที่เอกสาร\n- เดือน\n- ยอดค้างจ่าย\n- วันที่');
+                return;
+            }
+            
+            if (amt <= 0) {
+                alert('⚠️ ยอดค้างจ่ายต้องมากกว่า 0 บาท');
+                return;
+            }
+            
+            if (!validateDocNumber(doc, editId)) return;
+            
+            if (editId) {
+                const exp = expenses.find(e => e.id == editId);
+                if (!exp) {
+                    alert('❌ ไม่พบรายการในระบบ');
+                    return;
+                }
+                
+                exp.category = cat;
+                exp.docNumber = doc;
+                exp.accruedMonth = month;
+                exp.accruedAmount = amt;
+                exp.accruedDate = date;
+                exp.notes = note;
+            } else {
+                expenses.push({
+                    id: Date.now(), 
+                    category: cat, 
+                    docNumber: doc,
+                    accruedMonth: month, 
+                    accruedAmount: amt, 
+                    accruedDate: date,
+                    actualAmount: null, 
+                    paymentDocNumber: null, 
+                    paymentDate: null,
+                    notes: note, 
+                    status: 'pending', 
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
+            save();
+            resetFormToZero();
+            updateAll();
+            applyFilters();
+            updateDataStats();
+        }
+        
+        // ==================== EDIT / CANCEL ====================
+        function editExpense(id) {
+            const exp = expenses.find(e => e.id === id);
+            if (!exp) return;
+            
+            document.getElementById('expCat').value = exp.category;
+            document.getElementById('docNo').value = exp.docNumber;
+            document.getElementById('accAmt').value = exp.accruedAmount;
+            document.getElementById('accDate').value = exp.accruedDate;
+            document.getElementById('accNote').value = exp.notes || '';
+            document.getElementById('editId').value = exp.id;
+            
+            // หาปีงบฯ จาก accruedMonth
+            const [year, month] = exp.accruedMonth.split('-');
+            const m = parseInt(month);
+            let fy;
+            if (m >= 10) {
+                fy = parseInt(year);
+            } else {
+                fy = parseInt(year) - 1;
+            }
+            
+            // ตั้งค่าปีงบฯ
+            document.getElementById('fiscalYear').value = fy;
+            updateMonthButtons();
+            
+            // ตั้งค่าเดือนในช่อง input
+            document.getElementById('accMonth').value = exp.accruedMonth;
+            document.getElementById('monthDisplay').value = fmtMonth(exp.accruedMonth);
+            
+            document.getElementById('formTitle').textContent = '✏️ แก้ไขรายการค้างจ่าย';
+            document.getElementById('btnSave').textContent = '💾 อัพเดท';
+            document.getElementById('btnCancel').style.display = 'inline-flex';
+            
+            document.getElementById('secAccrued').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function cancelEdit() {
+            resetFormToZero();
+        }
+        
+        // ==================== UNPAY ====================
+        function undoPayment(id) {
+            if (!confirm('❓ คุณต้องการยกเลิกการจ่ายรายการนี้ใช่หรือไม่?\n\nรายการจะกลับเป็นสถานะ "ค้างจ่าย" และสามารถแก้ไขได้')) return;
+            
+            const exp = expenses.find(e => e.id === id);
+            if (!exp) return;
+            
+            exp.actualAmount = null;
+            exp.paymentDocNumber = null;
+            exp.paymentDate = null;
+            exp.status = 'pending';
+            
+            save();
+            updateAll();
+            applyFilters();
+            updateDataStats();
+        }
+        
+        // ==================== PAYMENT ====================
+        function doPayment() {
+            const doc = document.getElementById('payDoc').value.trim();
+            const amt = parseFloat(document.getElementById('payAmt').value);
+            const date = document.getElementById('payDate').value;
+            
+            if (!doc || isNaN(amt) || !date) {
+                alert('⚠️ กรุณากรอกข้อมูลให้ครบถ้วน\n\n- เลขที่เอกสารจ่าย\n- ยอดจ่ายจริง\n- วันที่จ่าย');
+                return;
+            }
+            
+            if (amt <= 0) {
+                alert('⚠️ ยอดจ่ายจริงต้องมากกว่า 0 บาท');
+                return;
+            }
+            
+            if (!validateBudget(amt)) return;
+            
+            const exp = expenses.find(e=>e.id===curId);
+            if (!exp) return;
+            
+            exp.actualAmount = amt;
+            exp.paymentDocNumber = doc;
+            exp.paymentDate = date;
+            exp.status = 'paid';
+            
+            save();
+            updateAll();
+            applyFilters();
+            closePay();
+            updateDataStats();
+            
+            document.getElementById('payDoc').value = '';
+            document.getElementById('payAmt').value = '0.00';
+            
+            sync({ type:'payment', data: exp });
+            
+            const diff = exp.accruedAmount - amt;
+            let msg = '✅ บันทึกยอดจ่ายจริงเรียบร้อยแล้ว\n\n';
+            if (diff > 0) {
+                msg += `💰 จ่ายน้อยกว่าค้างจ่าย: ${fmt(diff)}`;
+            } else if (diff < 0) {
+                msg += `⚠️ จ่ายมากกว่าค้างจ่าย: ${fmt(Math.abs(diff))}`;
+            } else {
+                msg += '✔️ จ่ายตรงตามประมาณการ';
+            }
+            alert(msg);
+        }
+        
+        // ==================== TRANSFER ====================
+        function addTransfer() {
+            const type = document.getElementById('trType').value;
+            const amt = parseFloat(document.getElementById('trAmt').value);
+            const date = document.getElementById('trDate').value;
+            
+            if (isNaN(amt) || amt <= 0) {
+                alert('⚠️ กรุณากรอกจำนวนเงินที่ถูกต้อง (มากกว่า 0)');
+                return;
+            }
+            
+            if (!date) {
+                alert('⚠️ กรุณากรอกวันที่');
+                return;
+            }
+            
+            if (type === 'out') {
+                const tb = getBudgetValue();
+                const out = transfers.filter(t=>t.type==='out').reduce((s,t)=>s+t.amount,0);
+                const inc = transfers.filter(t=>t.type==='in').reduce((s,t)=>s+t.amount,0);
+                if (amt > tb - out + inc) {
+                    alert('⚠️ งบประมาณคงเหลือไม่เพียงพอสำหรับการโอนออก');
+                    return;
+                }
+            }
+            
+            transfers.push({
+                id: Date.now(), 
+                type, 
+                amount: amt, 
+                transferDate: date,
+                note: document.getElementById('trNote').value.trim(),
+                category: null, 
+                timestamp: new Date().toISOString()
+            });
+            
+            save();
+            document.getElementById('trAmt').value = '0.00';
+            document.getElementById('trNote').value = '';
+            updateAll();
+            renderTrHistory();
+            updateDataStats();
+            sync({ type:'transfer', data: transfers[transfers.length-1] });
+        }
+        
+        // ==================== FILTER ====================
+        function applyFilters() {
+            currentFilters.category = document.getElementById('filterCat').value;
+            currentFilters.status = document.getElementById('filterStatus').value;
+            currentFilters.startMonth = document.getElementById('filterStartMonth').value;
+            currentFilters.endMonth = document.getElementById('filterEndMonth').value;
+            
+            let filtered = [...expenses];
+            
+            if (currentFilters.category) {
+                filtered = filtered.filter(e => e.category == currentFilters.category);
+            }
+            
+            if (currentFilters.status) {
+                filtered = filtered.filter(e => e.status === currentFilters.status);
+            }
+            
+            if (currentFilters.startMonth && currentFilters.endMonth) {
+                filtered = filtered.filter(e => 
+                    e.accruedMonth >= currentFilters.startMonth && 
+                    e.accruedMonth <= currentFilters.endMonth
+                );
+            } else if (currentFilters.startMonth) {
+                filtered = filtered.filter(e => e.accruedMonth >= currentFilters.startMonth);
+            } else if (currentFilters.endMonth) {
+                filtered = filtered.filter(e => e.accruedMonth <= currentFilters.endMonth);
+            }
+            
+            updateFilterStats(filtered);
+            renderTables(filtered);
+        }
+        
+        function clearFilters() {
+            document.getElementById('filterCat').value = '';
+            document.getElementById('filterStatus').value = '';
+            document.getElementById('filterStartMonth').value = '';
+            document.getElementById('filterEndMonth').value = '';
+            applyFilters();
+        }
+        
+        function updateFilterStats(filtered) {
+            const total = filtered.length;
+            const pending = filtered.filter(e => e.status === 'pending').length;
+            const paid = filtered.filter(e => e.status === 'paid').length;
+            const accruedSum = filtered.reduce((s, e) => s + e.accruedAmount, 0);
+            const paidSum = filtered.filter(e => e.status === 'paid').reduce((s, e) => s + (e.actualAmount || 0), 0);
+            
+            document.getElementById('filterStats').innerHTML = `
+                <div class="stat-item"><div class="label">รายการทั้งหมด</div><div class="value">${total}</div></div>
+                <div class="stat-item"><div class="label">ค้างจ่าย</div><div class="value" style="color:#e67e22;">${pending}</div></div>
+                <div class="stat-item"><div class="label">จ่ายแล้ว</div><div class="value" style="color:#4a5935;">${paid}</div></div>
+                <div class="stat-item"><div class="label">ยอดค้างจ่ายรวม</div><div class="value">${fmt(accruedSum)}</div></div>
+                <div class="stat-item"><div class="label">ยอดจ่ายจริงรวม</div><div class="value">${fmt(paidSum)}</div></div>
+            `;
+        }
+        
+        // ==================== RENDER ====================
+        function renderTables(filtered = expenses) {
+            let html = '';
+            for (let c=1; c<=3; c++) {
+                const ex = sortExpenses(filtered.filter(e=>e.category===c));
+                let rows = ex.length === 0
+                    ? '<tr><td colspan="10" style="text-align:center;padding:24px;color:#6b7280;">ไม่มีรายการที่ตรงกับเงื่อนไข</td></tr>'
+                    : ex.map((e,i)=>{
+                        const diff = e.status==='paid' ? e.accruedAmount - e.actualAmount : null;
+                        const dc = diff>0?'#4a5935':diff<0?'#c44025':'#1f2937';
+                        return `<tr>
+                            <td>${i+1}</td>
+                            <td>${fmtMonth(e.accruedMonth)}</td>
+                            <td><strong>${e.docNumber}</strong></td>
+                            <td>${fmtDate(e.accruedDate)}</td>
+                            <td>${fmt(e.accruedAmount)}</td>
+                            <td>${e.status==='paid'?fmt(e.actualAmount):'-'}</td>
+                            <td style="color:${dc};font-weight:${diff!==null?'bold':'normal'}">${diff!==null?fmt(diff):'-'}</td>
+                            <td>${e.paymentDate?fmtDate(e.paymentDate):'-'}</td>
+                            <td><span class="badge ${e.status==='paid'?'badge-paid':'badge-pending'}">${e.status==='paid'?'✓ จ่ายแล้ว':'⏳ ค้างจ่าย'}</span></td>
+                            <td>
+                                <div class="btn-group">
+                                    ${e.status==='pending' ? `
+                                        <button class="btn btn-edit btn-sm" onclick="editExpense(${e.id})">✏️ แก้ไข</button>
+                                        <button class="btn btn-success btn-sm" onclick="openPay(${e.id})">💰 จ่าย</button>
+                                        <button class="btn btn-danger btn-sm" onclick="delExp(${e.id})">🗑️ ลบ</button>
+                                    ` : `
+                                        <button class="btn btn-undo btn-sm" onclick="undoPayment(${e.id})">↩️ ยกเลิกจ่าย</button>
+                                        <small style="color:#6b7280;margin-left:4px;">${e.paymentDocNumber}</small>
+                                    `}
+                                </div>
+                            </td>
+                        </tr>`;
+                    }).join('');
+                
+                html += `<div class="tbl-wrap"><div class="tbl-head">${catName[c]}</div><div class="tbl-scroll"><table>
+                    <thead><tr><th>#</th><th>เดือน</th><th>เลขที่เอกสาร</th><th>วันที่</th><th>ค้างจ่าย</th><th>จ่ายจริง</th><th>ผลต่าง</th><th>วันที่จ่าย</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
+                    <tbody>${rows}</tbody></table></div></div>`;
+            }
+            document.getElementById('tablesHere').innerHTML = html;
+        }
+        
+        function renderTrHistory() {
+            const tbody = document.getElementById('trHistory');
+            tbody.innerHTML = transfers.length === 0
+                ? '<tr><td colspan="6" style="text-align:center;padding:24px;color:#6b7280;">ยังไม่มีประวัติการโอน</td></tr>'
+                : transfers.map((t,i)=>`<tr>
+                    <td>${i+1}</td><td>${fmtDate(t.transferDate)}</td>
+                    <td><span style="color:${t.type==='out'?'#c44025':'#4a5935'};font-weight:600;">${t.type==='out'?'📤 โอนออก':'📥 รับโอน'}</span></td>
+                    <td>${fmt(t.amount)}</td><td>${t.note||'-'}</td>
+                    <td><button class="btn btn-danger btn-sm" onclick="delTr(${t.id})">🗑️ ลบ</button></td>
+                </tr>`).join('');
+        }
+        
+        function genReport() {
+            const tb = getBudgetValue();
+            const out = transfers.filter(t=>t.type==='out').reduce((s,t)=>s+t.amount,0);
+            const inc = transfers.filter(t=>t.type==='in').reduce((s,t)=>s+t.amount,0);
+            const net = tb - out + inc;
+            const paid = expenses.filter(e=>e.status==='paid').reduce((s,e)=>s+(e.actualAmount||0),0);
+            
+            document.getElementById('rptSummary').innerHTML = `
+                <tr><td><strong>งบประมาณรวม</strong></td><td>${fmt(tb)}</td></tr>
+                <tr><td>โอนออก (-)</td><td style="color:#c44025;">${fmt(out)}</td></tr>
+                <tr><td>รับโอน (+)</td><td style="color:#4a5935;">${fmt(inc)}</td></tr>
+                <tr><td><strong>งบประมาณสุทธิ</strong></td><td>${fmt(net)}</td></tr>
+                <tr style="background:#f9fafb;"><td><strong>จ่ายจริงทั้งหมด</strong></td><td>${fmt(paid)}</td></tr>
+                <tr style="background:#fef5e7;"><td><strong>💵 คงเหลือ</strong></td><td style="font-size:28px;font-weight:700;color:${net-paid>=0?'#4a5935':'#c44025'}">${fmt(net-paid)}</td></tr>`;
+            
+            let detail = '';
+            for (let c=1; c<=3; c++) {
+                const ex = expenses.filter(e=>e.category===c);
+                const acc = ex.reduce((s,e)=>s+e.accruedAmount,0);
+                const pa = ex.filter(e=>e.status==='paid').reduce((s,e)=>s+(e.actualAmount||0),0);
+                detail += `<div class="tbl-wrap" style="margin-bottom:14px;">
+                    <div class="tbl-head">${catName[c]}</div>
+                    <div class="tbl-scroll"><table>
+                        <tr><td>ค้างจ่าย</td><td>${fmt(acc)}</td></tr>
+                        <tr><td>จ่ายจริง</td><td>${fmt(pa)}</td></tr>
+                        <tr><td>ผลต่าง</td><td style="color:${acc-pa>=0?'#4a5935':'#c44025'}">${fmt(acc-pa)}</td></tr>
+                    </table></div></div>`;
+            }
+            document.getElementById('rptDetail').innerHTML = detail;
+        }
+        
+        // ==================== BACKUP/RESTORE ====================
+        function backupData() {
+            const data = {
+                version: '2.0',
+                expenses,
+                transfers,
+                totalBudget: getBudgetValue(),
+                exportDate: new Date().toISOString(),
+                stats: {
+                    totalExpenses: expenses.length,
+                    totalTransfers: transfers.length,
+                    pendingCount: expenses.filter(e => e.status === 'pending').length,
+                    paidCount: expenses.filter(e => e.status === 'paid').length
+                }
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            const filename = `accrued_backup_${new Date().toISOString().split('T')[0]}_${Date.now()}.json`;
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            a.click();
+            
+            localStorage.setItem('lastBackup', new Date().toISOString());
+            updateDataStats();
+            
+            alert(`✅ สำรองข้อมูลเรียบร้อย\n\nไฟล์: ${filename}\nรายการค้างจ่าย: ${data.stats.totalExpenses} รายการ\nการโอนงบ: ${data.stats.totalTransfers} รายการ`);
+        }
+        
+        function restoreData(file) {
+            if (!file) return;
+            
+            if (!confirm('⚠️ คำเตือน!\n\nการกู้คืนจะแทนที่ข้อมูลปัจจุบันทั้งหมด\nข้อมูลเดิมจะสูญหายถาวร\n\nคุณแน่ใจหรือไม่?')) {
+                document.getElementById('restoreFile').value = '';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if (!data.expenses || !data.transfers || !data.totalBudget) {
+                        throw new Error('ไฟล์ไม่ถูกต้อง: ขาดข้อมูลที่จำเป็น');
+                    }
+                    
+                    expenses = data.expenses;
+                    transfers = data.transfers;
+                    document.getElementById('totalBudget').value = data.totalBudget;
+                    
+                    save();
+                    updateAll();
+                    applyFilters();
+                    renderTrHistory();
+                    updateDataStats();
+                    
+                    alert(`✅ กู้คืนข้อมูลสำเร็จ!\n\nรายการค้างจ่าย: ${expenses.length} รายการ\nการโอนงบ: ${transfers.length} รายการ\nวันที่สำรอง: ${fmtDate(data.exportDate)}`);
+                } catch(err) {
+                    alert(`❌ ไม่สามารถกู้คืนข้อมูลได้\n\nข้อผิดพลาด: ${err.message}\n\nกรุณาตรวจสอบไฟล์`);
+                }
+                document.getElementById('restoreFile').value = '';
+            };
+            reader.readAsText(file);
+        }
+        
+        function clearAllData() {
+            if (!confirm('⚠️ คำเตือนสุดท้าย!\n\nคุณกำลังจะลบข้อมูลทั้งหมดอย่างถาวร\nไม่สามารถกู้คืนได้\n\nพิมพ์ "DELETE" เพื่อยืนยัน')) {
+                return;
+            }
+            
+            const confirm2 = prompt('พิมพ์ "DELETE" เพื่อยืนยันการลบข้อมูล:');
+            if (confirm2 !== 'DELETE') {
+                alert('ยกเลิกการลบข้อมูล');
+                return;
+            }
+            
+            expenses = [];
+            transfers = [];
+            document.getElementById('totalBudget').value = '23,000,000.00';
+            
+            localStorage.clear();
+            
+            updateAll();
+            applyFilters();
+            renderTrHistory();
+            updateDataStats();
+            
+            alert('✅ ลบข้อมูลทั้งหมดเรียบร้อยแล้ว\nระบบถูกรีเซ็ตเป็นค่าเริ่มต้น');
+        }
+        
+        function updateDataStats() {
+            document.getElementById('statExpenses').textContent = `${expenses.length} รายการ`;
+            document.getElementById('statTransfers').textContent = `${transfers.length} รายการ`;
+            
+            const size = new Blob([JSON.stringify({ expenses, transfers })]).size;
+            document.getElementById('statSize').textContent = `${(size / 1024).toFixed(2)} KB`;
+            
+            const lastBackup = localStorage.getItem('lastBackup');
+            document.getElementById('statLastBackup').textContent = lastBackup 
+                ? fmtDate(lastBackup) 
+                : 'ยังไม่เคยสำรอง';
+        }
+        
+        // ==================== SYNC ====================
+        async function exportToSheets() { 
+            try {
+                await fetch(GSURL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        type: 'exportAll', 
+                        data: { 
+                            expenses, 
+                            transfers, 
+                            totalBudget: getBudgetValue(), 
+                            exportDate: new Date().toISOString() 
+                        } 
+                    })
+                });
+                alert('✅ ส่งออกไป Google Sheets เรียบร้อย');
+                updateConn(true);
+            } catch(e) {
+                alert('❌ ไม่สามารถส่งออกได้\nกรุณาตรวจสอบการเชื่อมต่อ');
+                updateConn(false);
+            }
+        }
+        
+        async function sync(obj) {
+            if (GSURL === 'YOUR_GOOGLE_APPS_SCRIPT_URL') return;
+            try { 
+                await fetch(GSURL, { 
+                    method:'POST', 
+                    headers:{'Content-Type':'application/json'}, 
+                    body:JSON.stringify(obj) 
+                }); 
+                updateConn(true); 
+            } catch(e) { 
+                updateConn(false); 
+            }
+        }
+        
+        function updateConn(ok) {
+            const d = document.getElementById('connDot');
+            const t = document.getElementById('connText');
+            d.className = 'dot' + (ok ? '' : ' off');
+            t.textContent = ok ? 'เชื่อมต่อ Google Sheets' : 'Local Mode';
+        }
+        
+        function save() {
+            safeSave('allExpenses', expenses);
+            safeSave('budgetTransfers', transfers);
+        }
+        
+        function switchTab(t) {
+            document.getElementById('secAccrued').style.display = t==='accrued'?'block':'none';
+            document.getElementById('secTransfer').style.display = t==='transfer'?'block':'none';
+            document.getElementById('secReport').style.display = t==='report'?'block':'none';
+            document.getElementById('secBackup').style.display = t==='backup'?'block':'none';
+            
+            document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (t==='report') genReport();
+            if (t==='backup') updateDataStats();
+        }
+        
+        function openPay(id) {
+            curId = id;
+            const e = expenses.find(x=>x.id===id);
+            if (!e) return;
+            document.getElementById('payInfo').innerHTML = `
+                <p><strong>รายการ:</strong> ${catName[e.category]}</p>
+                <p><strong>เดือน:</strong> ${fmtMonth(e.accruedMonth)}</p>
+                <p><strong>เลขที่เอกสาร:</strong> ${e.docNumber}</p>
+                <p><strong>ยอดค้างจ่าย:</strong> ${fmt(e.accruedAmount)}</p>`;
+            document.getElementById('payDoc').value = '';
+            document.getElementById('payAmt').value = e.accruedAmount.toFixed(2);
+            document.getElementById('payModal').classList.add('show');
+        }
+        
+        function closePay() { 
+            document.getElementById('payModal').classList.remove('show'); 
+            curId = null; 
+        }
+        
+        function delExp(id) { 
+            if(!confirm('❓ คุณแน่ใจหรือไม่ที่จะลบรายการนี้?\n\nการลบไม่สามารถกู้คืนได้')) return; 
+            expenses = expenses.filter(e=>e.id!==id); 
+            save(); 
+            updateAll(); 
+            applyFilters(); 
+            updateDataStats();
+            alert('✅ ลบรายการเรียบร้อยแล้ว');
+        }
+        
+        function delTr(id) { 
+            if(!confirm('❓ ลบประวัติการโอนนี้?\n\nการลบไม่สามารถกู้คืนได้')) return; 
+            transfers = transfers.filter(t=>t.id!==id); 
+            save(); 
+            updateAll(); 
+            renderTrHistory(); 
+            updateDataStats();
+            alert('✅ ลบประวัติการโอนเรียบร้อยแล้ว');
+        }
+        
+        init();
+        window.onclick = function(e) { 
+            if (e.target === document.getElementById('payModal')) closePay(); 
+        };
+        document.getElementById('totalBudget').addEventListener('blur', updateAll);
+        document.getElementById('totalBudget').addEventListener('focus', function() { 
+            this.value = getBudgetValue().toString(); 
+        });
+    </script>
+</body>
+</html>
